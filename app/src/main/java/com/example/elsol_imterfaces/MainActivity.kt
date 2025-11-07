@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,6 +22,9 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -61,7 +65,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ElSol_ImterfacesTheme {
-                BottomAppBarExample()
+                DrawerAndBottomBarScreen()
                 }
         }
     }
@@ -76,135 +80,112 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     )
     BottomAppBar() { }
 }
-@Composable
-fun BottomAppBarExample() {
-    var itemCount by remember { mutableStateOf(0) }
-    Scaffold(
-        bottomBar = {
-            BottomAppBar(
-                actions = {
-                    IconButton(onClick = { }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Atras")
-                    }
-                    IconButton(
-                        onClick = { itemCount++ }
-                    ) {
-                        BadgedBox(
-                            badge = {
-                                if (itemCount > 0) {
-                                    Badge(
-                                        containerColor = Color.Red,
-                                        contentColor = Color.White
-                                    ) {
-                                        Text("$itemCount")
-                                    }
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Favorite,
-                                contentDescription = "Favoritos",
-                            )
-                        }
-                    }
 
-                },
-                floatingActionButton = {
-                    FloatingActionButton(
-                        onClick = { /* do something */ },
-                        containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
-                        elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
-                    ) {
-                        Icon(Icons.Filled.Add, "Localized description")
-                    }
-                }
-            )
-        },
-    ) { innerPadding ->
-        Text(
-            modifier = Modifier.padding(innerPadding),
-            text = "Example of a scaffold with a bottom app bar."
-        )
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailedDrawerExample(
-    content: @Composable (PaddingValues) -> Unit
-) {
+fun DetailedDrawerContent() {
+    ModalDrawerSheet {
+        Column(
+            modifier = Modifier.width(300.dp)
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Spacer(Modifier.height(12.dp))
+            NavigationDrawerItem(
+                label = { Text("Build") },
+                selected = false,
+                icon = { Icon(Icons.Outlined.Build, contentDescription = null) },
+                onClick = { /* Handle click */ }
+            )
+            NavigationDrawerItem(
+                label = { Text("Info") },
+                selected = false,
+                icon = { Icon(Icons.Outlined.Info, contentDescription = null) },
+                onClick = { /* Handle click */ }
+            )
+            NavigationDrawerItem(
+                label = { Text("Email") },
+                selected = false,
+                icon = { Icon(Icons.Outlined.Email, contentDescription = null) },
+                onClick = { /* Handle click */ }
+            )
+            Spacer(Modifier.height(12.dp))
+        }
+    }
+}
+@Composable
+fun BottomAppBarWithDrawerControl(onOpenDrawer: () -> Unit) {
+    var itemCount by remember { mutableStateOf(0) }
+
+    BottomAppBar(
+        actions = {
+            IconButton(onClick = onOpenDrawer) {
+                Icon(Icons.Filled.ArrowBack, contentDescription = "Abrir Menú Lateral")
+            }
+            IconButton(
+                onClick = { itemCount++ }
+            ) {
+                BadgedBox(
+                    badge = {
+                        if (itemCount > 0) {
+                            Badge(
+                                containerColor = Color.Gray,
+                                contentColor = Color.White
+                            ) {
+                                Text("$itemCount")
+                            }
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Favorite,
+                        contentDescription = "Favoritos",
+                    )
+                }
+            }
+
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { /* do something */ },
+                containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
+                elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
+            ) {
+                Icon(Icons.Filled.Add, "Localized description")
+            }
+        }
+    )
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DrawerAndBottomBarScreen() {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     ModalNavigationDrawer(
-        drawerContent = {
-            ModalDrawerSheet {
-                Column(
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    Spacer(Modifier.height(12.dp))
-                    Text("Drawer Title", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge)
-                    HorizontalDivider()
-
-                    Text("Section 1", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleMedium)
-                    NavigationDrawerItem(
-                        label = { Text("Item 1") },
-                        selected = false,
-                        onClick = { /* Handle click */ }
-                    )
-                    NavigationDrawerItem(
-                        label = { Text("Item 2") },
-                        selected = false,
-                        onClick = { /* Handle click */ }
-                    )
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                    Text("Section 2", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleMedium)
-                    NavigationDrawerItem(
-                        label = { Text("Settings") },
-                        selected = false,
-                        icon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
-                        badge = { Text("20") }, // Placeholder
-                        onClick = { /* Handle click */ }
-                    )
-                    NavigationDrawerItem(
-                        label = { Text("Help and feedback") },
-                        selected = false,
-                        icon = { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null) },
-                        onClick = { /* Handle click */ },
-                    )
-                    Spacer(Modifier.height(12.dp))
-                }
-            }
-        },
+        drawerContent = { DetailedDrawerContent() },
         drawerState = drawerState
     ) {
         Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Navigation Drawer Example") },
-                    navigationIcon = {
-                        IconButton(onClick = {
-                            scope.launch {
-                                if (drawerState.isClosed) {
-                                    drawerState.open()
-                                } else {
-                                    drawerState.close()
-                                }
-                            }
-                        }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu")
-                        }
+            bottomBar = {
+                BottomAppBarWithDrawerControl(
+                    onOpenDrawer = {
+                        scope.launch { drawerState.open() }
                     }
                 )
-            }
+            },
         ) { innerPadding ->
-            content(innerPadding)
+            Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+                Text(
+                    modifier = Modifier.padding(16.dp),
+                    text = "El menú lateral se abrirá al presionar la flecha en la barra inferior."
+                )
+            }
         }
     }
 }
+
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
