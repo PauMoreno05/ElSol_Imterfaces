@@ -57,6 +57,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -81,7 +82,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             ElSol_ImterfacesTheme {
                 DrawerAndBottomBarScreen()
-                }
+            }
         }
     }
 }
@@ -137,9 +138,16 @@ fun DetailedDrawerContent() {
         }
     }
 }
+
+// 🌟 CAMBIO CLAVE: Se agregaron las funciones onCopy y onDelete
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SolarImageCard(image: SolImage, modifier: Modifier = Modifier) {
+fun SolarImageCard(
+    image: SolImage,
+    onCopy: (SolImage) -> Unit,
+    onDelete: (SolImage) -> Unit,
+    modifier: Modifier = Modifier
+) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(
@@ -177,11 +185,17 @@ fun SolarImageCard(image: SolImage, modifier: Modifier = Modifier) {
                     ) {
                         DropdownMenuItem(
                             text = { Text("Copiar") },
-                            onClick = { expanded = false }
+                            onClick = {
+                                onCopy(image) // 🌟 Llamada a la función de Copiar
+                                expanded = false
+                            }
                         )
                         DropdownMenuItem(
                             text = { Text("Eliminar") },
-                            onClick = { expanded = false }
+                            onClick = {
+                                onDelete(image) // 🌟 Llamada a la función de Eliminar
+                                expanded = false
+                            }
                         )
                     }
                 }
@@ -233,11 +247,24 @@ fun BottomAppBarWithDrawerControl(onOpenDrawer: () -> Unit) {
     )
 }
 
+// 🌟 CAMBIO CLAVE: Lógica de estado mutable y acciones de lista
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DrawerAndBottomBarScreen() {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val imagesState = remember { mutableStateListOf(*solImages.toTypedArray()) }
+    val onCopyImage: (SolImage) -> Unit = { image ->
+        val newImage = image.copy(
+            id = image.id,
+            name = image.name
+        )
+        imagesState.add(newImage)
+    }
+
+    val onDeleteImage: (SolImage) -> Unit = { image ->
+        imagesState.remove(image)
+    }
 
     ModalNavigationDrawer(
         drawerContent = { DetailedDrawerContent() },
@@ -259,8 +286,12 @@ fun DrawerAndBottomBarScreen() {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(solImages) { image ->
-                    SolarImageCard(image = image)
+                items(imagesState, key = { it.name + it.id.toString() + System.identityHashCode(it) }) { image ->
+                    SolarImageCard(
+                        image = image,
+                        onCopy = onCopyImage,
+                        onDelete = onDeleteImage
+                    )
                 }
             }
         }
