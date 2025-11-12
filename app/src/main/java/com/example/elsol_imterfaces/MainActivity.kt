@@ -16,27 +16,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
@@ -44,16 +38,15 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -74,6 +67,20 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import androidx.compose.foundation.shape.RoundedCornerShape
+
+enum class Screen {
+    Home,
+    Info
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -100,7 +107,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailedDrawerContent() {
+fun DetailedDrawerContent(onNavigate: (Screen) -> Unit) {
     ModalDrawerSheet {
         Column(
             modifier = Modifier.width(300.dp)
@@ -120,39 +127,156 @@ fun DetailedDrawerContent() {
                 label = { Text("Build") },
                 selected = false,
                 icon = { Icon(Icons.Outlined.Build, contentDescription = null) },
-                onClick = { /* Handle click */ }
+                onClick = { onNavigate(Screen.Home) }
             )
             NavigationDrawerItem(
                 label = { Text("Info") },
                 selected = false,
                 icon = { Icon(Icons.Outlined.Info, contentDescription = null) },
-                onClick = { /* Handle click */ }
+                onClick = { onNavigate(Screen.Info) }
             )
             NavigationDrawerItem(
                 label = { Text("Email") },
                 selected = false,
                 icon = { Icon(Icons.Outlined.Email, contentDescription = null) },
-                onClick = { /* Handle click */ }
+                onClick = { onNavigate(Screen.Home) }
             )
             Spacer(Modifier.height(12.dp))
         }
     }
 }
 
-// 🌟 CAMBIO CLAVE: Se agregaron las funciones onCopy y onDelete
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun InfoScreen(paddingValues: PaddingValues) {
+    var isDownloading by remember { mutableStateOf(false) }
+    var downloadProgress by remember { mutableStateOf(0.0f) }
+    var showIndicator by remember { mutableStateOf(false) }
+
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isDownloading) {
+        if (isDownloading) {
+            showIndicator = true
+            downloadProgress = 0.0f
+
+            for (i in 1..20) {
+                delay(100)
+                downloadProgress = i / 20f
+            }
+
+            delay(500)
+            showIndicator = false
+            isDownloading = false
+            downloadProgress = 0.0f
+        }
+    }
+
+    if (showDatePicker) {
+        val dateState = rememberDatePickerState()
+        val scope = rememberCoroutineScope()
+
+        DatePickerDialog(
+            onDismissRequest = {
+                showDatePicker = false
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDatePicker = false
+                        val selectedDateMillis = dateState.selectedDateMillis
+                        if (selectedDateMillis != null) {
+                            val selectedDate = Date(selectedDateMillis)
+                            val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                            scope.launch {
+                                println("Fecha seleccionada: ${formatter.format(selectedDate)}")
+                            }
+                        }
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = dateState)
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+            .padding(top = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ) {
+        Button(
+            onClick = {
+                if (!isDownloading) {
+                    isDownloading = true
+                }
+            },
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF6A1B9A),
+                contentColor = Color.White
+            ),
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier
+                .width(200.dp)
+                .padding(bottom = 24.dp)
+        ) {
+            Text(text = "Download more info")
+        }
+
+        if (showIndicator) {
+            CircularProgressIndicator(
+                progress = { downloadProgress },
+                modifier = Modifier.width(64.dp),
+                color = Color(0xFF6A1B9A),
+                strokeWidth = 6.dp
+            )
+        }
+
+        Spacer(Modifier.height(if (showIndicator) 32.dp else 96.dp))
+
+        Button(
+            onClick = {
+                showDatePicker = true
+            },
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF6A1B9A)
+            ),
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier
+                .width(250.dp)
+        ) {
+            Text("Visit Planetarium. Select date", color = Color.White)
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SolarImageCard(
     image: SolImage,
     onCopy: (SolImage) -> Unit,
     onDelete: (SolImage) -> Unit,
+    onCardClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        onClick = {  }
+        onClick = {
+            onCardClick(image.name)
+        }
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Image(
@@ -186,14 +310,14 @@ fun SolarImageCard(
                         DropdownMenuItem(
                             text = { Text("Copiar") },
                             onClick = {
-                                onCopy(image) // 🌟 Llamada a la función de Copiar
+                                onCopy(image)
                                 expanded = false
                             }
                         )
                         DropdownMenuItem(
                             text = { Text("Eliminar") },
                             onClick = {
-                                onDelete(image) // 🌟 Llamada a la función de Eliminar
+                                onDelete(image)
                                 expanded = false
                             }
                         )
@@ -247,13 +371,20 @@ fun BottomAppBarWithDrawerControl(onOpenDrawer: () -> Unit) {
     )
 }
 
-// 🌟 CAMBIO CLAVE: Lógica de estado mutable y acciones de lista
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DrawerAndBottomBarScreen() {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val imagesState = remember { mutableStateListOf(*solImages.toTypedArray()) }
+    var currentScreen by remember { mutableStateOf(Screen.Home) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val navigateTo: (Screen) -> Unit = { screen ->
+        currentScreen = screen
+        scope.launch { drawerState.close() }
+    }
+
     val onCopyImage: (SolImage) -> Unit = { image ->
         val newImage = image.copy(
             id = image.id,
@@ -266,11 +397,21 @@ fun DrawerAndBottomBarScreen() {
         imagesState.remove(image)
     }
 
+    val onImageCardClick: (String) -> Unit = { imageName ->
+        scope.launch {
+            snackbarHostState.showSnackbar(
+                message = imageName,
+                withDismissAction = false,
+            )
+        }
+    }
+
     ModalNavigationDrawer(
-        drawerContent = { DetailedDrawerContent() },
+        drawerContent = { DetailedDrawerContent(onNavigate = navigateTo) },
         drawerState = drawerState
     ) {
         Scaffold(
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
             bottomBar = {
                 BottomAppBarWithDrawerControl(
                     onOpenDrawer = {
@@ -279,19 +420,27 @@ fun DrawerAndBottomBarScreen() {
                 )
             },
         ) { innerPadding ->
-            LazyVerticalGrid(
-                contentPadding = innerPadding,
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(imagesState, key = { it.name + it.id.toString() + System.identityHashCode(it) }) { image ->
-                    SolarImageCard(
-                        image = image,
-                        onCopy = onCopyImage,
-                        onDelete = onDeleteImage
-                    )
+            when (currentScreen) {
+                Screen.Home -> {
+                    LazyVerticalGrid(
+                        contentPadding = innerPadding,
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(imagesState, key = { it.name + it.id.toString() + System.identityHashCode(it) }) { image ->
+                            SolarImageCard(
+                                image = image,
+                                onCopy = onCopyImage,
+                                onDelete = onDeleteImage,
+                                onCardClick = onImageCardClick
+                            )
+                        }
+                    }
+                }
+                Screen.Info -> {
+                    InfoScreen(paddingValues = innerPadding)
                 }
             }
         }
